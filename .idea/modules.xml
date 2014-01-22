@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/MotionCamera/MotionCamera.iml" filepath="$PROJECT_DIR$/MotionCamera/MotionCamera.iml" />
+      <module fileurl="file://$PROJECT_DIR$/MotionCameraProject.iml" filepath="$PROJECT_DIR$/MotionCameraProject.iml" />
+    </modules>
+  </component>
+</project>
+
