@@ -37,30 +37,32 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback {
     public void surfaceCreated(SurfaceHolder holder) {
         // The Surface has been created, acquire the camera and tell it where
         // to draw.
-        camera = Camera.open();
+        //camera = Camera.open();
         try {
-            camera.setPreviewDisplay(holder);
+            if (camera != null) {
+                camera.setPreviewDisplay(holder);
 
-            camera.setPreviewCallback(new Camera.PreviewCallback() {
+                camera.setPreviewCallback(new Camera.PreviewCallback() {
 
-                public void onPreviewFrame(byte[] data, Camera arg1) {
-                    FileOutputStream outStream = null;
-                    try {
-                        outStream = new FileOutputStream(String.format(
-                                "/DCIM/Camera/%d.jpg", System.currentTimeMillis()));
-                        outStream.write(data);
-                        outStream.close();
-                        Log.d(TAG, "onPreviewFrame - wrote bytes: "
-                                + data.length);
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } finally {
+                    public void onPreviewFrame(byte[] data, Camera arg1) {
+                        FileOutputStream outStream = null;
+                        try {
+                            outStream = new FileOutputStream(String.format(
+                                    "/DCIM/Camera/%d.jpg", System.currentTimeMillis()));
+                            outStream.write(data);
+                            outStream.close();
+                            Log.d(TAG, "onPreviewFrame - wrote bytes: "
+                                    + data.length);
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        } finally {
+                        }
+                        Preview.this.invalidate();
                     }
-                    Preview.this.invalidate();
-                }
-            });
+                });
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -71,18 +73,28 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback {
         // Surface will be destroyed when we return, so stop the preview.
         // Because the CameraDevice object is not a shared resource, it's very
         // important to release it when the activity is paused.
-        camera.stopPreview();
-        camera = null;
+        if (camera != null) {
+            camera.stopPreview();
+        }
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
         // Now that the size is known, set up the camera parameters and begin
         // the preview.
+        if (camera == null ) {
+            return;
+        }
         Camera.Parameters parameters = camera.getParameters();
         //parameters.setPreviewSize(w, h);
         camera.setParameters(parameters);
-        camera.startPreview();
+
+        try {
+            camera.startPreview();
+        } catch (Exception e) {
+            camera.release();
+            camera = null;
+        }
     }
 
     @Override

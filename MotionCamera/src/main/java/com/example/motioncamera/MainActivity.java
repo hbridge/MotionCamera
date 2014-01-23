@@ -29,7 +29,6 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     private static final String TAG = "MotionCamera";
     private SensorManager sensorMan;
     private Sensor accelerometer;
-    Camera camera;
     Preview preview;
     static boolean photoInProgress;
 
@@ -60,6 +59,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
         preview = new Preview(this);
         ((FrameLayout) findViewById(R.id.preview)).addView(preview);
+        //preview.camera.open();
 
     }
 
@@ -146,6 +146,9 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         super.onResume();
         sensorMan.registerListener(this, accelerometer,
                 SensorManager.SENSOR_DELAY_UI);
+        preview.camera = Camera.open(0);
+        System.err.println("Camera opened");
+
 
     }
 
@@ -153,6 +156,10 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     protected void onPause() {
         super.onPause();
         sensorMan.unregisterListener(this);
+        if (preview.camera != null) {
+            preview.camera.release();
+            preview.camera = null;
+        }
 
     }
 
