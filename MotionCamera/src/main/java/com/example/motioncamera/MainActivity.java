@@ -5,6 +5,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Handler;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -22,6 +23,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.File;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends ActionBarActivity implements SensorEventListener {
 
@@ -38,6 +41,12 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     private float mAccelCurrent;
     private float mAccelLast;
 
+    private boolean USE_CAMERA = false;
+
+    protected Handler handler = new Handler();
+    protected MotionEndTask motionEndTask;
+    protected int shotCount;
+    protected TextView shotCounterTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,9 +66,12 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         mAccelCurrent = SensorManager.GRAVITY_EARTH;
         mAccelLast = SensorManager.GRAVITY_EARTH;
         photoInProgress = false;
+        this.shotCounterTextView = (TextView) findViewById(R.id.shotCounter);
 
-        preview = new Preview(this);
-        ((FrameLayout) findViewById(R.id.preview)).addView(preview);
+        if (USE_CAMERA) {
+            preview = new Preview(this);
+            ((FrameLayout) findViewById(R.id.preview)).addView(preview);
+        }
 
     }
 
@@ -171,17 +183,28 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
             // Make this higher or lower according to how much
             // motion you want to detect
             if(mAccel > 3){
-                TextView textView = (TextView) findViewById(R.id.textField);
-                textView.setText(Float.toString(mAccel));
-                if (!photoInProgress) {
-                    photoInProgress = true;
-                    preview.camera.takePicture(shutterCallback, rawCallback, jpegCallback);
+                if (motionEndTask != null) handler.removeCallbacks(motionEndTask);
+                motionEndTask = new MotionEndTask();
+                handler.postDelayed(motionEndTask, 500);
+
+                if (USE_CAMERA) {
+                    if (!photoInProgress) {
+                        photoInProgress = true;
+                        preview.camera.takePicture(shutterCallback, rawCallback, jpegCallback);
+                    }
                 }
 
             }
         }
 
     }
+
+    protected class MotionEndTask implements Runnable {
+        public void run() {
+            shotCounterTextView.setText(Integer.toString(shotCount++));
+        }
+    }
+
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
