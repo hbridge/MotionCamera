@@ -7,14 +7,41 @@
 
     <FrameLayout android:id="@+id/preview"
         android:layout_weight="1" android:layout_width="fill_parent"
-        android:layout_height="fill_parent">
+        android:layout_height="137dp">
     </FrameLayout>
 
-    <TextView
-        android:id="@+id/shotCounter"
-        android:text="0"
+    <LinearLayout
+        android:orientation="horizontal"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="96sp"
-        android:layout_gravity="center_horizontal" />
+        android:layout_height="100sp"
+        android:layout_gravity="center_horizontal">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Calibrate Closed"
+            android:id="@+id/buttonCalOpen"
+            android:layout_gravity="center_vertical"
+            android:onClick="calibrateCloseClicked"
+            />
+
+        <TextView
+            android:id="@+id/shotCounter"
+            android:text="0"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="96sp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginLeft="10sp"
+            android:layout_marginRight="10sp" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Calibrate Open"
+            android:id="@+id/buttonCalClosed"
+            android:layout_gravity="center_vertical"
+            android:onClick="calibrateOpenClicked"
+            />
+    </LinearLayout>
 </LinearLayout>

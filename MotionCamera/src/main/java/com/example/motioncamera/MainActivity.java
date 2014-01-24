@@ -16,6 +16,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
@@ -27,25 +28,27 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class MainActivity extends ActionBarActivity implements SensorEventListener {
-
-    // Start with some variables
     private static final String TAG = "MotionCamera";
+
+
+    protected TextView shotCounterTextView;
+    protected Preview preview;
+    protected Button calibrateClosedButton;
+    protected Button calibrateOpenButton;
+
     private SensorManager sensorMan;
     private Sensor accelerometer;
-    Preview preview;
-    static boolean photoInProgress;
-
-    private float[] mGravity;
+    private float[] mGravityCurrent;
+    private float[] mGravityLast;
     private float mAccel;
     private float mAccelCurrent;
     private float mAccelLast;
-
-    private boolean USE_CAMERA = false;
-
     protected Handler handler = new Handler();
     protected MotionEndTask motionEndTask;
+
+    private boolean USE_CAMERA = true;
+    static boolean photoInProgress;
     protected int shotCount;
-    protected TextView shotCounterTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,7 +68,11 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         mAccelCurrent = SensorManager.GRAVITY_EARTH;
         mAccelLast = SensorManager.GRAVITY_EARTH;
         photoInProgress = false;
+
+
         this.shotCounterTextView = (TextView) findViewById(R.id.shotCounter);
+        this.calibrateClosedButton = (Button) findViewById(R.id.buttonCalClosed);
+        this.calibrateOpenButton = (Button) findViewById(R.id.buttonCalOpen);
 
         if (USE_CAMERA) {
             preview = new Preview(this);
@@ -157,7 +164,9 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         super.onResume();
         sensorMan.registerListener(this, accelerometer,
                 SensorManager.SENSOR_DELAY_UI);
-        preview.camera = Camera.open(0);
+        if (USE_CAMERA) {
+            preview.camera = Camera.open(0);
+        }
         System.err.println("Camera opened");
 
 
@@ -177,11 +186,12 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER){
-            mGravity = event.values.clone();
+            mGravityLast = mGravityCurrent;
+            mGravityCurrent = event.values.clone();
             // Shake detection
-            float x = mGravity[0];
-            float y = mGravity[1];
-            float z = mGravity[2];
+            float x = mGravityCurrent[0];
+            float y = mGravityCurrent[1];
+            float z = mGravityCurrent[2];
             mAccelLast = mAccelCurrent;
             mAccelCurrent = FloatMath.sqrt(x * x + y * y + z * z);
             float delta = mAccelCurrent - mAccelLast;
@@ -213,6 +223,17 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         // required method
+    }
+
+
+
+    public void calibrateCloseClicked(View view) {
+        System.out.println("Close calibrated at: x:" + mGravityCurrent[0] + " y:" + mGravityCurrent[1] + " z:" + mGravityCurrent[2]);
+
+    }
+
+    public void calibrateOpenClicked(View view) {
+        System.out.println("Open calibrated at: x:" + mGravityCurrent[0] + " y:" + mGravityCurrent[1] + " z:" + mGravityCurrent[2]);
     }
 
 
