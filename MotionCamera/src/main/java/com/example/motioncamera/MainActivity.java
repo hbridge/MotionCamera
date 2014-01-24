@@ -1,18 +1,19 @@
 package com.example.motioncamera;
 
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.hardware.Camera;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.media.MediaScannerConnection;
+import android.net.Uri;
 import android.os.Handler;
-import android.support.v7.app.ActionBarActivity;
-import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
+import android.support.v7.app.ActionBarActivity;
+import android.support.v4.app.Fragment;
 import android.util.FloatMath;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -25,13 +26,8 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 
 
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.File;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
 
 public class MainActivity extends ActionBarActivity implements SensorEventListener {
     private static final String TAG = "MotionCamera";
@@ -137,7 +133,6 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         public void onPictureTaken(byte[] data, Camera camera) {
             Log.d(TAG, "onPictureTaken - raw");
             photoInProgress = false;
-            //preview.camera.startPreview();
         }
     };
 
@@ -146,23 +141,25 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         public void onPictureTaken(byte[] data, Camera camera) {
 
             String root = Environment.getExternalStorageDirectory().toString();
-            File myDir = new File(root + "/saved_images");
+            File myDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
             myDir.mkdirs();
             //create a filename
-            String filename = String.format(
+            String fileName = String.format(
                     "%d.jpg", System.currentTimeMillis());
             // save the jpeg data to disk
             FileOutputStream os = null;
+            File file = null;
             boolean success = true;
             try {
-                File file = new File (myDir, filename);
+
+                file = new File (myDir, fileName);
                 os = new FileOutputStream(file);
-                //os = MainActivity.this.openFileOutput(filename, Context.MODE_PRIVATE);
                 os.write(data);
                 os.flush();
+                galleryAddPic(myDir.getAbsolutePath() + fileName);
                 Log.e(TAG, "Wrote data");
             } catch (Exception e) {
-                Log.e(TAG, "Error writing to file " + filename, e);
+                Log.e(TAG, "Error writing to file " + fileName, e);
                 success = false;
             } finally {
                 Log.e(TAG, "Inside finally tag");
@@ -170,7 +167,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
                     if (os != null)
                         os.close();
                 } catch (Exception e) {
-                    Log.e(TAG, "Error closing file " + filename, e);
+                    Log.e(TAG, "Error closing file " + fileName, e);
                     success = false;
                 }
             }
@@ -178,16 +175,35 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
             if (success) {
                 // set the photo filename on the result intent
                 if (success) {
-                    Log.i(TAG, "JPEG saved at " + filename);
+                    Log.i(TAG, "JPEG saved at " + fileName);
+                    MediaScannerConnection.scanFile(MainActivity.this,
+                            new String[] { file.toString()}, null,
+                            new MediaScannerConnection.OnScanCompletedListener() {
+                                public void onScanCompleted(String path, Uri uri) {
+                                    Log.e("ExternalStorage", "Scanned " + path + ":");
+                                    Log.e("ExternalStorage", "-> uri=" + uri);
+                                }
+                            });
                 }
             }
 
+
+
             Log.d(TAG, "onPictureTaken - jpeg");
             photoInProgress = false;
-            preview.camera.startPreview();
-
+            if (preview.camera != null) {
+                preview.camera.startPreview();
+            }
         }
     };
+
+    private void galleryAddPic(String mCurrentPhotoPath) {
+        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        File f = new File(mCurrentPhotoPath);
+        Uri contentUri = Uri.fromFile(f);
+        mediaScanIntent.setData(contentUri);
+        this.sendBroadcast(mediaScanIntent);
+    }
 
     @Override
     public void onResume() {

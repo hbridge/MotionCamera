@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.hardware.Camera;
+import android.hardware.Camera.Size;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -12,6 +13,7 @@ import android.view.SurfaceView;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Created by aseem on 1/22/14.
@@ -87,7 +89,10 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback {
             return;
         }
         Camera.Parameters parameters = camera.getParameters();
-        //parameters.setPreviewSize(w, h);
+        Size size = getBestSupportedSize(parameters.getSupportedPreviewSizes(), w, h);
+        parameters.setPreviewSize(size.width, size.height); // preview size
+        //camera.setDisplayOrientation(180);
+        //parameters.setRotation(180);
         camera.setParameters(parameters);
 
         try {
@@ -105,5 +110,21 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback {
         Log.d(TAG, "draw");
         canvas.drawText("PREVIEW", canvas.getWidth() / 2,
                 canvas.getHeight() / 2, p);
+    }
+
+    /** a simple algorithm to get the largest size available. For a more
+     * robust version, see CameraPreview.java in the ApiDemos
+     * sample app from Android. */
+    private Size getBestSupportedSize(List<Size> sizes, int width, int height) {
+        Size bestSize = sizes.get(0);
+        int largestArea = bestSize.width * bestSize.height;
+        for (Size s : sizes) {
+            int area = s.width * s.height;
+            if (area > largestArea) {
+                bestSize = s;
+                largestArea = area;
+            }
+        }
+        return bestSize;
     }
 }
