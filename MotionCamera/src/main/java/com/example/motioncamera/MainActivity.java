@@ -1,5 +1,8 @@
 package com.example.motioncamera;
 
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
 import android.hardware.Camera;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -25,11 +28,13 @@ import java.io.IOException;
 import java.io.File;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 
 public class MainActivity extends ActionBarActivity implements SensorEventListener {
 
     // Start with some variables
     private static final String TAG = "MotionCamera";
+    public static final String EXTRA_PHOTO_FILENAME = "MotionCamera.filename";
     private SensorManager sensorMan;
     private Sensor accelerometer;
     Preview preview;
@@ -40,7 +45,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     private float mAccelCurrent;
     private float mAccelLast;
 
-    private boolean USE_CAMERA = false;
+    private boolean USE_CAMERA = true;
 
     protected Handler handler = new Handler();
     protected MotionEndTask motionEndTask;
@@ -124,13 +129,50 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         public void onPictureTaken(byte[] data, Camera camera) {
             Log.d(TAG, "onPictureTaken - raw");
             photoInProgress = false;
-            preview.camera.startPreview();
+            //preview.camera.startPreview();
         }
     };
 
     /** Handles data for jpeg picture */
     Camera.PictureCallback jpegCallback = new Camera.PictureCallback() {
         public void onPictureTaken(byte[] data, Camera camera) {
+
+            //create a filename
+            String filename = String.format(
+                    "%d.jpg", System.currentTimeMillis());
+            // save the jpeg data to disk
+            FileOutputStream os = null;
+            boolean success = true;
+            try {
+                os = MainActivity.this.openFileOutput(filename, Context.MODE_PRIVATE);
+                os.write(data);
+            } catch (Exception e) {
+                Log.e(TAG, "Error writing to file " + filename, e);
+                success = false;
+            } finally {
+                try {
+                    if (os != null)
+                        os.close();
+                } catch (Exception e) {
+                    Log.e(TAG, "Error closing file " + filename, e);
+                    success = false;
+                }
+            }
+
+            if (success) {
+                // set the photo filename on the result intent
+                if (success) {
+                    Intent i = new Intent();
+                    i.putExtra("", filename);
+                    MainActivity.this.setResult(Activity.RESULT_OK, i);
+                } else {
+                    MainActivity.this.setResult(Activity.RESULT_CANCELED);
+                }
+            }
+
+
+
+            /*
             FileOutputStream outStream = null;
             try {
                 outStream = new FileOutputStream(String.format(
@@ -144,10 +186,11 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                photoInProgress = false;
-                preview.camera.startPreview();
             }
+            */
             Log.d(TAG, "onPictureTaken - jpeg");
+            photoInProgress = false;
+            preview.camera.startPreview();
 
         }
     };
@@ -194,7 +237,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
                 handler.postDelayed(motionEndTask, 500);
 
                 if (USE_CAMERA) {
-                    if (!photoInProgress) {
+                    if (!photoInProgress && preview.camera != null) {
                         photoInProgress = true;
                         preview.camera.takePicture(shutterCallback, rawCallback, jpegCallback);
                     }
