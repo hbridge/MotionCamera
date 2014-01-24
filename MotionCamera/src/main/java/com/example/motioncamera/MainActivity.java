@@ -1,5 +1,8 @@
 package com.example.motioncamera;
 
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
 import android.hardware.Camera;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -26,10 +29,10 @@ import java.io.IOException;
 import java.io.File;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 
 public class MainActivity extends ActionBarActivity implements SensorEventListener {
     private static final String TAG = "MotionCamera";
-
 
     protected TextView shotCounterTextView;
     protected Preview preview;
@@ -49,6 +52,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     private boolean USE_CAMERA = true;
     static boolean photoInProgress;
     protected int shotCount;
+    public static final String EXTRA_PHOTO_FILENAME = "MotionCamera.filename";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -131,30 +135,48 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         public void onPictureTaken(byte[] data, Camera camera) {
             Log.d(TAG, "onPictureTaken - raw");
             photoInProgress = false;
-            preview.camera.startPreview();
+            //preview.camera.startPreview();
         }
     };
 
     /** Handles data for jpeg picture */
     Camera.PictureCallback jpegCallback = new Camera.PictureCallback() {
         public void onPictureTaken(byte[] data, Camera camera) {
-            FileOutputStream outStream = null;
+
+            //create a filename
+            String filename = String.format(
+                    "%d.jpg", System.currentTimeMillis());
+            // save the jpeg data to disk
+            FileOutputStream os = null;
+            boolean success = true;
             try {
-                outStream = new FileOutputStream(String.format(
-                        "/temp/%d.jpg", System.currentTimeMillis()));
-                outStream.write(data);
-                outStream.close();
-                Log.d(TAG, "onPictureTaken - wrote bytes: " + data.length);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-                System.err.println("Error thrown");
-            } catch (IOException e) {
-                e.printStackTrace();
+                os = MainActivity.this.openFileOutput(filename, Context.MODE_PRIVATE);
+                os.write(data);
+                Log.e(TAG, "Wrote data");
+            } catch (Exception e) {
+                Log.e(TAG, "Error writing to file " + filename, e);
+                success = false;
             } finally {
-                photoInProgress = false;
-                preview.camera.startPreview();
+                Log.e(TAG, "Inside finally tag");
+                try {
+                    if (os != null)
+                        os.close();
+                } catch (Exception e) {
+                    Log.e(TAG, "Error closing file " + filename, e);
+                    success = false;
+                }
             }
+
+            if (success) {
+                // set the photo filename on the result intent
+                if (success) {
+                    Log.i(TAG, "JPEG saved at " + filename);
+                }
+            }
+
             Log.d(TAG, "onPictureTaken - jpeg");
+            photoInProgress = false;
+            preview.camera.startPreview();
 
         }
     };
@@ -179,7 +201,9 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         if (preview.camera != null) {
             preview.camera.release();
             preview.camera = null;
+            System.err.println("OnPause - camera released");
         }
+
 
     }
 
@@ -211,7 +235,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         public void run() {
             shotCounterTextView.setText(Integer.toString(shotCount++));
             if (USE_CAMERA) {
-                if (!photoInProgress) {
+                if (!photoInProgress && preview.camera != null) {
                     photoInProgress = true;
                     preview.camera.takePicture(shutterCallback, rawCallback, jpegCallback);
                 }

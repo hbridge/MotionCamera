@@ -42,13 +42,13 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback {
             if (camera != null) {
                 camera.setPreviewDisplay(holder);
 
-                camera.setPreviewCallback(new Camera.PreviewCallback() {
+               /* camera.setPreviewCallback(new Camera.PreviewCallback() {
 
                     public void onPreviewFrame(byte[] data, Camera arg1) {
                         FileOutputStream outStream = null;
                         try {
                             outStream = new FileOutputStream(String.format(
-                                    "/DCIM/Camera/%d.jpg", System.currentTimeMillis()));
+                                    "%d.jpg", System.currentTimeMillis()));
                             outStream.write(data);
                             outStream.close();
                             Log.d(TAG, "onPreviewFrame - wrote bytes: "
@@ -61,10 +61,11 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback {
                         }
                         Preview.this.invalidate();
                     }
-                });
+                });*/
             }
         } catch (IOException e) {
             e.printStackTrace();
+            Log.e(TAG, "Error setting up preview display", e);
         }
     }
 
