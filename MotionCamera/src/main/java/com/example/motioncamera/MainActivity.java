@@ -235,14 +235,6 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
                 if (motionEndTask != null) handler.removeCallbacks(motionEndTask);
                 motionEndTask = new MotionEndTask();
                 handler.postDelayed(motionEndTask, 500);
-
-                if (USE_CAMERA) {
-                    if (!photoInProgress && preview.camera != null) {
-                        photoInProgress = true;
-                        preview.camera.takePicture(shutterCallback, rawCallback, jpegCallback);
-                    }
-                }
-
             }
         }
 
@@ -251,6 +243,12 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     protected class MotionEndTask implements Runnable {
         public void run() {
             shotCounterTextView.setText(Integer.toString(shotCount++));
+            if (USE_CAMERA) {
+                if (!photoInProgress && preview.camera != null) {
+                    photoInProgress = true;
+                    preview.camera.takePicture(shutterCallback, rawCallback, jpegCallback);
+                }
+            }
         }
     }
 
