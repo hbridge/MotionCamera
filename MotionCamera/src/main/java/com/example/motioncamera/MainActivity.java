@@ -12,6 +12,7 @@ import android.os.Handler;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.FloatMath;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -21,6 +22,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -137,6 +139,9 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     Camera.PictureCallback jpegCallback = new Camera.PictureCallback() {
         public void onPictureTaken(byte[] data, Camera camera) {
 
+            String root = Environment.getExternalStorageDirectory().toString();
+            File myDir = new File(root + "/saved_images");
+            myDir.mkdirs();
             //create a filename
             String filename = String.format(
                     "%d.jpg", System.currentTimeMillis());
@@ -144,8 +149,11 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
             FileOutputStream os = null;
             boolean success = true;
             try {
-                os = MainActivity.this.openFileOutput(filename, Context.MODE_PRIVATE);
+                File file = new File (myDir, filename);
+                os = new FileOutputStream(file);
+                //os = MainActivity.this.openFileOutput(filename, Context.MODE_PRIVATE);
                 os.write(data);
+                os.flush();
                 Log.e(TAG, "Wrote data");
             } catch (Exception e) {
                 Log.e(TAG, "Error writing to file " + filename, e);
