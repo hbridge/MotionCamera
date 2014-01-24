@@ -146,10 +146,12 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
             try {
                 os = MainActivity.this.openFileOutput(filename, Context.MODE_PRIVATE);
                 os.write(data);
+                Log.e(TAG, "Wrote data");
             } catch (Exception e) {
                 Log.e(TAG, "Error writing to file " + filename, e);
                 success = false;
             } finally {
+                Log.e(TAG, "Inside finally tag");
                 try {
                     if (os != null)
                         os.close();
@@ -162,32 +164,10 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
             if (success) {
                 // set the photo filename on the result intent
                 if (success) {
-                    Intent i = new Intent();
-                    i.putExtra("", filename);
-                    MainActivity.this.setResult(Activity.RESULT_OK, i);
-                } else {
-                    MainActivity.this.setResult(Activity.RESULT_CANCELED);
+                    Log.i(TAG, "JPEG saved at " + filename);
                 }
             }
 
-
-
-            /*
-            FileOutputStream outStream = null;
-            try {
-                outStream = new FileOutputStream(String.format(
-                        "/temp/%d.jpg", System.currentTimeMillis()));
-                outStream.write(data);
-                outStream.close();
-                Log.d(TAG, "onPictureTaken - wrote bytes: " + data.length);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-                System.err.println("Error thrown");
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-            }
-            */
             Log.d(TAG, "onPictureTaken - jpeg");
             photoInProgress = false;
             preview.camera.startPreview();
@@ -213,7 +193,9 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         if (preview.camera != null) {
             preview.camera.release();
             preview.camera = null;
+            System.err.println("OnPause - camera released");
         }
+
 
     }
 

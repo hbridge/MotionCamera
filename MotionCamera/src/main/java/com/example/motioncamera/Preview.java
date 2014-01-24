@@ -42,7 +42,7 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback {
             if (camera != null) {
                 camera.setPreviewDisplay(holder);
 
-                camera.setPreviewCallback(new Camera.PreviewCallback() {
+               /* camera.setPreviewCallback(new Camera.PreviewCallback() {
 
                     public void onPreviewFrame(byte[] data, Camera arg1) {
                         FileOutputStream outStream = null;
@@ -61,10 +61,11 @@ class Preview extends SurfaceView implements SurfaceHolder.Callback {
                         }
                         Preview.this.invalidate();
                     }
-                });
+                });*/
             }
         } catch (IOException e) {
             e.printStackTrace();
+            Log.e(TAG, "Error setting up preview display", e);
         }
     }
 
