@@ -1,7 +1,8 @@
 .gradle
 /local.properties
-/.idea/workspace.xml
+.idea/
 .DS_Store
+*.iml
 
 # built application files
 *.apk
