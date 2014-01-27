@@ -48,8 +48,8 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     protected Handler handler = new Handler();
     protected MotionEndTask motionEndTask;
 
-    private boolean USE_CAMERA = false;
-    private boolean USE_VIDEO = true;
+    private boolean USE_CAMERA = true;
+    private boolean USE_VIDEO = false;
     static boolean photoInProgress;
     protected int shotCount;
     protected Handler vHandler = new Handler();
