@@ -34,6 +34,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
     protected TextView shotCounterTextView;
     protected Preview preview;
+    protected PreviewVideo previewVideo;
     protected Button calibrateClosedButton;
     protected Button calibrateOpenButton;
 
@@ -47,9 +48,12 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     protected Handler handler = new Handler();
     protected MotionEndTask motionEndTask;
 
-    private boolean USE_CAMERA = true;
+    private boolean USE_CAMERA = false;
+    private boolean USE_VIDEO = true;
     static boolean photoInProgress;
     protected int shotCount;
+    protected Handler vHandler = new Handler();
+    protected VideoEndTask videoEndTask;
     public static final String EXTRA_PHOTO_FILENAME = "MotionCamera.filename";
 
     @Override
@@ -79,6 +83,10 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         if (USE_CAMERA) {
             preview = new Preview(this);
             ((FrameLayout) findViewById(R.id.preview)).addView(preview);
+        }
+        else if (USE_VIDEO){
+            previewVideo = new PreviewVideo(this);
+            ((FrameLayout) findViewById(R.id.preview)).addView(previewVideo);
         }
 
     }
@@ -156,7 +164,6 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
                 os = new FileOutputStream(file);
                 os.write(data);
                 os.flush();
-                galleryAddPic(myDir.getAbsolutePath() + fileName);
                 Log.e(TAG, "Wrote data");
             } catch (Exception e) {
                 Log.e(TAG, "Error writing to file " + fileName, e);
@@ -176,14 +183,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
                 // set the photo filename on the result intent
                 if (success) {
                     Log.i(TAG, "JPEG saved at " + fileName);
-                    MediaScannerConnection.scanFile(MainActivity.this,
-                            new String[] { file.toString()}, null,
-                            new MediaScannerConnection.OnScanCompletedListener() {
-                                public void onScanCompleted(String path, Uri uri) {
-                                    Log.e("ExternalStorage", "Scanned " + path + ":");
-                                    Log.e("ExternalStorage", "-> uri=" + uri);
-                                }
-                            });
+                    addFileToGallery(file.toString());
                 }
             }
 
@@ -191,18 +191,21 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
             Log.d(TAG, "onPictureTaken - jpeg");
             photoInProgress = false;
-            if (preview.camera != null) {
+            if (preview != null && preview.camera != null) {
                 preview.camera.startPreview();
             }
         }
     };
 
-    private void galleryAddPic(String mCurrentPhotoPath) {
-        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-        File f = new File(mCurrentPhotoPath);
-        Uri contentUri = Uri.fromFile(f);
-        mediaScanIntent.setData(contentUri);
-        this.sendBroadcast(mediaScanIntent);
+    public void addFileToGallery(String file){
+        MediaScannerConnection.scanFile(MainActivity.this,
+                new String[]{file}, null,
+                new MediaScannerConnection.OnScanCompletedListener() {
+                    public void onScanCompleted(String path, Uri uri) {
+                        Log.e("ExternalStorage", "Scanned " + path + ":");
+                        Log.e("ExternalStorage", "-> uri=" + uri);
+                    }
+                });
     }
 
     @Override
@@ -213,7 +216,9 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
         if (USE_CAMERA) {
             preview.camera = Camera.open(0);
         }
-        System.err.println("Camera opened");
+        else if (USE_VIDEO) {
+            //previewVideo.prepareRecorder();
+        }
 
 
     }
@@ -222,7 +227,7 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
     protected void onPause() {
         super.onPause();
         sensorMan.unregisterListener(this);
-        if (preview.camera != null) {
+        if (preview != null && preview.camera != null) {
             preview.camera.release();
             preview.camera = null;
             System.err.println("OnPause - camera released");
@@ -246,10 +251,21 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
             mAccel = mAccel * 0.9f + delta;
             // Make this higher or lower according to how much
             // motion you want to detect
-            if(mAccel > 3){
+            if(mAccel > 1){
                 if (motionEndTask != null) handler.removeCallbacks(motionEndTask);
                 motionEndTask = new MotionEndTask();
-                handler.postDelayed(motionEndTask, 500);
+                handler.postDelayed(motionEndTask, 1000);
+
+                if (USE_VIDEO) {
+                    previewVideo.startRecording();
+                    Log.e(TAG, "Started recording");
+                    if (videoEndTask != null) {
+                        vHandler.removeCallbacks(videoEndTask);
+                    }
+                    videoEndTask = new VideoEndTask();
+                    vHandler.postDelayed(videoEndTask, 3000);
+
+                }
             }
         }
 
@@ -257,11 +273,23 @@ public class MainActivity extends ActionBarActivity implements SensorEventListen
 
     protected class MotionEndTask implements Runnable {
         public void run() {
-            shotCounterTextView.setText(Integer.toString(shotCount++));
+            shotCounterTextView.setText(Integer.toString(++shotCount));
             if (USE_CAMERA) {
                 if (!photoInProgress && preview.camera != null) {
                     photoInProgress = true;
                     preview.camera.takePicture(shutterCallback, rawCallback, jpegCallback);
+                }
+            }
+        }
+    }
+
+    protected class VideoEndTask implements Runnable {
+        public void run() {
+            if (USE_VIDEO) {
+                if (previewVideo.recording) {
+                    previewVideo.stopRecording();
+                    addFileToGallery(previewVideo.mediaFile.toString());
+                    Log.e(TAG, "Stopped Recording");
                 }
             }
         }
